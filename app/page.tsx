@@ -2,6 +2,16 @@
 
 import { useState } from "react";
 
+interface CallSummary {
+  customerName: string | null;
+  dateOfBirth: string | null;
+  appointmentType: string | null;
+  appointmentTiming: string | null;
+  outcome: "confirmed" | "rescheduled" | "cancelled" | "unknown";
+  contactNumber: string | null;
+  notes: string[];
+}
+
 interface SentimentResult {
   callId: string;
   analysis?: {
@@ -14,6 +24,7 @@ interface SentimentResult {
     agentPerformance: { empathy: number; clarity: number; resolution: number };
     emotionalJourney: Array<{ timestamp: string; emotion: string; intensity: number }>;
     turnByTurnAnalysis: Array<{ speaker: string; text: string; sentiment: string; score: number }>;
+    callSummary: CallSummary;
   };
   cached?: boolean;
   error?: string;
@@ -112,6 +123,45 @@ export default function Dashboard() {
             </div>
             <p style={{ marginTop: 16, color: "#374151", lineHeight: 1.6 }}>{a.summary}</p>
           </section>
+
+          {a.callSummary && (
+            <section style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+              <h2 style={{ margin: "0 0 16px", fontSize: 18 }}>Call Summary</h2>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <tbody>
+                  {(
+                    [
+                      ["Customer Name", a.callSummary.customerName],
+                      ["Date of Birth", a.callSummary.dateOfBirth],
+                      ["Appointment Type", a.callSummary.appointmentType],
+                      ["Appointment Timing", a.callSummary.appointmentTiming],
+                      ["Outcome", a.callSummary.outcome],
+                      ["Contact Number", a.callSummary.contactNumber],
+                    ] as [string, string | null][]
+                  ).map(([label, value]) => (
+                    <tr key={label} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px 0", color: "#64748b", fontWeight: 500, width: 180, verticalAlign: "top" }}>{label}</td>
+                      <td style={{ padding: "10px 0", color: value ? "#111827" : "#94a3b8", fontStyle: value ? "normal" : "italic" }}>
+                        {value ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                  {a.callSummary.notes.length > 0 && (
+                    <tr>
+                      <td style={{ padding: "10px 0", color: "#64748b", fontWeight: 500, verticalAlign: "top" }}>Notes</td>
+                      <td style={{ padding: "10px 0" }}>
+                        <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+                          {a.callSummary.notes.map((n, i) => (
+                            <li key={i} style={{ color: "#374151" }}>{n}</li>
+                          ))}
+                        </ul>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </section>
+          )}
 
           <section style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 18 }}>Agent Performance</h2>

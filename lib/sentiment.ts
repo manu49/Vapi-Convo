@@ -25,6 +25,16 @@ const AgentPerformanceSchema = z.object({
   resolution: z.number().min(1).max(10).describe("Problem resolution effectiveness score 1-10"),
 });
 
+const CallSummarySchema = z.object({
+  customerName: z.string().nullable().describe("Customer's name as stated during the call, or null if not provided"),
+  dateOfBirth: z.string().nullable().describe("Customer's date of birth if mentioned, or null"),
+  appointmentType: z.string().nullable().describe("Type of appointment (e.g. dental, doctor, haircut), or null if not mentioned"),
+  appointmentTiming: z.string().nullable().describe("When the appointment is scheduled (e.g. 'next week', 'Tuesday 3pm'), or null"),
+  outcome: z.enum(["confirmed", "rescheduled", "cancelled", "unknown"]).describe("What the customer decided about their appointment"),
+  contactNumber: z.string().nullable().describe("Phone number provided by the customer, or null"),
+  notes: z.array(z.string()).describe("Any other relevant details or flags from the call (e.g. errors, unresolved items)"),
+});
+
 const SentimentSchema = z.object({
   overallSentiment: z.enum(["positive", "negative", "neutral", "mixed"]).describe("Overall sentiment of the entire call"),
   sentimentScore: z.number().min(-1).max(1).describe("Composite sentiment score from -1 to 1"),
@@ -35,6 +45,7 @@ const SentimentSchema = z.object({
   agentPerformance: AgentPerformanceSchema,
   summary: z.string().describe("2-3 sentence summary of the call and its sentiment arc"),
   actionableInsights: z.array(z.string()).describe("Concrete recommendations based on sentiment patterns"),
+  callSummary: CallSummarySchema.describe("Structured summary of key call details"),
 });
 
 export type SentimentAnalysis = z.infer<typeof SentimentSchema>;
