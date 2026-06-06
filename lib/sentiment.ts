@@ -41,8 +41,9 @@ export type SentimentAnalysis = z.infer<typeof SentimentSchema>;
 
 export async function analyzeSentiment(transcript: string): Promise<SentimentAnalysis> {
   const { object } = await generateObject({
-    model: anthropic("claude-opus-4-8"),
+    model: anthropic("claude-haiku-4-5-20251001"),
     schema: SentimentSchema,
+    temperature: 1,
     messages: [
       {
         role: "user",
