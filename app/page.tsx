@@ -2,19 +2,31 @@
 
 import { useState } from "react";
 
+interface CallSummary {
+  customerName: string;
+  contactNumber: string;
+  serviceRequested: string;
+  appointmentDate: string;
+  callOutcome: string;
+  actionableItems: string[];
+}
+
+interface Analysis {
+  callSummary: CallSummary;
+  overallSentiment: string;
+  sentimentScore: number;
+  customerSatisfactionScore: number;
+  summary: string;
+  keyTopics: string[];
+  actionableInsights: string[];
+  agentPerformance: { empathy: number; clarity: number; resolution: number };
+  emotionalJourney: Array<{ timestamp: string; emotion: string; intensity: number }>;
+  turnByTurnAnalysis: Array<{ speaker: string; text: string; sentiment: string; score: number }>;
+}
+
 interface SentimentResult {
   callId: string;
-  analysis?: {
-    overallSentiment: string;
-    sentimentScore: number;
-    customerSatisfactionScore: number;
-    summary: string;
-    keyTopics: string[];
-    actionableInsights: string[];
-    agentPerformance: { empathy: number; clarity: number; resolution: number };
-    emotionalJourney: Array<{ timestamp: string; emotion: string; intensity: number }>;
-    turnByTurnAnalysis: Array<{ speaker: string; text: string; sentiment: string; score: number }>;
-  };
+  analysis?: Analysis;
   cached?: boolean;
   error?: string;
 }
@@ -26,6 +38,62 @@ function ScoreBadge({ score, max = 10 }: { score: number; max?: number }) {
     <span style={{ background: color, color: "#fff", padding: "2px 8px", borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
       {max === 10 ? `${score}/10` : score.toFixed(2)}
     </span>
+  );
+}
+
+function CallSummaryTable({ callId, summary }: { callId: string; summary: CallSummary }) {
+  function downloadJson() {
+    const data = { callId, ...summary };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `call-summary-${callId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const rows: [string, string | string[]][] = [
+    ["Customer Name", summary.customerName],
+    ["Contact Number", summary.contactNumber],
+    ["Service Requested", summary.serviceRequested],
+    ["Appointment Date", summary.appointmentDate],
+    ["Call Outcome", summary.callOutcome],
+    ["Actionable Items", summary.actionableItems],
+  ];
+
+  return (
+    <section style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h2 style={{ margin: 0, fontSize: 18 }}>Call Summary</h2>
+        <button
+          onClick={downloadJson}
+          style={{ padding: "7px 16px", background: "#0f172a", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+        >
+          ↓ Download JSON
+        </button>
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <tbody>
+          {rows.map(([label, value]) => (
+            <tr key={label} style={{ borderBottom: "1px solid #f1f5f9" }}>
+              <td style={{ padding: "10px 12px 10px 0", color: "#64748b", fontWeight: 500, whiteSpace: "nowrap", verticalAlign: "top", width: 160 }}>
+                {label}
+              </td>
+              <td style={{ padding: "10px 0", color: "#0f172a", verticalAlign: "top" }}>
+                {Array.isArray(value) ? (
+                  <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+                    {value.map((item, i) => <li key={i}>{item}</li>)}
+                  </ul>
+                ) : (
+                  <span style={{ textTransform: label === "Call Outcome" ? "capitalize" : "none" }}>{value}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
@@ -94,8 +162,10 @@ export default function Dashboard() {
             </div>
           )}
 
+          <CallSummaryTable callId={result!.callId} summary={a.callSummary} />
+
           <section style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,.08)" }}>
-            <h2 style={{ margin: "0 0 16px", fontSize: 18 }}>Overview</h2>
+            <h2 style={{ margin: "0 0 16px", fontSize: 18 }}>Sentiment Overview</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Overall Sentiment</div>
@@ -163,7 +233,7 @@ export default function Dashboard() {
             <h2 style={{ margin: "0 0 12px", fontSize: 18 }}>Turn-by-Turn Analysis</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {a.turnByTurnAnalysis.map((t, i) => {
-                const isAgent = t.speaker.toLowerCase().includes("agent") || t.speaker.toLowerCase().includes("assistant");
+                const isAgent = t.speaker.toLowerCase().includes("agent") || t.speaker.toLowerCase().includes("ai") || t.speaker.toLowerCase().includes("bot");
                 return (
                   <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                     <span style={{ minWidth: 70, fontSize: 12, fontWeight: 600, color: isAgent ? "#7c3aed" : "#0369a1", paddingTop: 3 }}>

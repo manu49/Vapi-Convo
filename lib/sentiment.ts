@@ -25,7 +25,17 @@ const AgentPerformanceSchema = z.object({
   resolution: z.number().min(1).max(10).describe("Problem resolution effectiveness score 1-10"),
 });
 
+const CallSummarySchema = z.object({
+  customerName: z.string().describe("Full name of the customer as mentioned in the call, or 'Unknown' if not provided"),
+  contactNumber: z.string().describe("Phone number provided by the customer, or 'Not provided' if absent"),
+  serviceRequested: z.string().describe("The service, appointment type, or reason for the call"),
+  appointmentDate: z.string().describe("Appointment date/time if mentioned, or 'Not specified'"),
+  callOutcome: z.enum(["confirmed", "rescheduled", "cancelled", "escalated", "unresolved", "other"]).describe("How the call concluded"),
+  actionableItems: z.array(z.string()).describe("Concrete follow-up tasks that need to be done after this call"),
+});
+
 const SentimentSchema = z.object({
+  callSummary: CallSummarySchema,
   overallSentiment: z.enum(["positive", "negative", "neutral", "mixed"]).describe("Overall sentiment of the entire call"),
   sentimentScore: z.number().min(-1).max(1).describe("Composite sentiment score from -1 to 1"),
   emotionalJourney: z.array(EmotionalMomentSchema).describe("Key emotional moments throughout the call"),
